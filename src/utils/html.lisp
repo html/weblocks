@@ -24,7 +24,8 @@
           render-message
           send-script
           with-table
-          render-definition-list))
+          render-definition-list 
+          render-param-link))
 
 (declaim (special *action-string*))	;early
 
@@ -105,6 +106,43 @@ without escaping."
                                    (htm (str (princ-to-string label)))))
                    label)))
     (log-link label action-code :id id :class class)))
+
+(defun get-initiate-action-js-code (action-code plist-args)
+  (format nil "initiateActionWithArgs(\"~A\", \"~A\", ~A); return false;"
+          action-code (session-name-string-pair)
+          (cl-json:encode-json-plist-to-string 
+            (loop for i in plist-args collect 
+                  (if (keywordp i)
+                    (string-downcase i)
+                    i)))))
+
+(defun render-param-link (widget-or-uri-id label &rest args)
+  "Renders link to change widget public parameter(s)"
+  (declare (optimize (speed 3) (space 2)))
+  (setf ajaxp nil)
+  (setf action-code "")
+
+  (cond 
+    ((keywordp widget-or-uri-id)
+     (setf widget-or-uri-id (string widget-or-uri-id)))
+    ((not (stringp widget-or-uri-id))
+     (setf widget-or-uri-id (or 
+                              (widget-url-id widget-or-uri-id)
+                              (error "Widget ~A does not have url-id parameter" widget-or-uri-id)))))
+
+  (let* ((*print-pretty* nil)
+	 (url ""))
+
+    (loop for (key value) on args :by 'cddr
+          do (setf url (add-get-param-to-url url (string-downcase (format nil "~A.~A" widget-or-uri-id key)) (write-to-string value))))
+
+    (with-html
+      (:a :href url :onclick (when ajaxp
+                               (get-initiate-action-js-code action-code args))
+       (funcall (lambda (label)
+                  (htm (str (princ-to-string label))))
+                label)))
+    (log-link label action-code)))
 
 (defun render-button (name  &key (value (humanize-name name)) id (class "submit"))
   "Renders a button in a form.

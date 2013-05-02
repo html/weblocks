@@ -96,11 +96,21 @@ inherits from 'widget' if no direct superclasses are provided."
 		     :documentation "A function called after rendering
 	             the widget body. The function should expect the
 	             widget as well as any additional arguments passed
-	             to the widget."))
+	             to the widget.")
+   (uri-id :initform nil 
+           :initarg :uri-id 
+           :accessor widget-uri-id 
+           :documentation "An id used in urls to change widget parameters")
+   (uri-public-parameters :initform nil
+                          :initarg :public-parameters
+                          :accessor widget-uri-public-parameters 
+                          :documentation "A list of widget parameters which can be changed via url"))
   #+lispworks (:optimize-slot-access nil)
   (:metaclass widget-class)
   (:documentation "Base class for all widget objects."))
 
+(defmethod setf-public-parameter ((widget widget) parameter value)
+  (eval `(setf (,(intern (format nil "~A-~A" (string-upcase (type-of widget)) (string-upcase parameter)) "WEBLOCKS"), widget) ,value)))
 
 ;; Process the :name initarg and set the dom-id accordingly. Note that
 ;; it is possible to pass :name nil, which simply means that objects
@@ -517,6 +527,19 @@ if INCLUDE-SUBTYPES-P) in the widget tree starting at ROOT
                       (declare (ignore d))
                       (when (funcall test id (dom-id widget))
                         (return-from get-widget-by-id widget)))))
+
+
+(defmethod get-widgets-by-uri-id (id &key (test #'equal))
+  "Find a widget by its uri id."
+  (let (widgets)
+    (walk-widget-tree 
+      (root-widget)
+      (lambda (widget d)
+        (declare (ignore d))
+        (when (and (subtypep (type-of widget) 'widget)
+                   (funcall test id (widget-uri-id widget)))
+          (push widget widgets))))
+    widgets))
 
 (defun widget-parents (widget)
   "Return the parent chain of a widget."

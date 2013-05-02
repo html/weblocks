@@ -104,6 +104,16 @@ customize behavior."))
           result)
         (webapp-update-thread-status "Request complete/idle")))))
 
+(defun set-widgets-public-parameters ()
+  (loop for (key . value) in (request-parameters) do 
+        (ppcre:register-groups-bind 
+          (uri-id slot)
+          ("^([^\\.]+)\\.([^\\.]+)$" key)
+          (let ((widgets (get-widgets-by-uri-id (intern (string-upcase uri-id) "KEYWORD"))))
+            ;(firephp:fb uri-id (intern (string-upcase slot) "KEYWORD") value widgets)
+            (loop for widget in widgets do 
+                  (setf-public-parameter widget (intern (string-upcase slot) "KEYWORD") value))))))
+
 (defmethod handle-client-request ((app weblocks-webapp))
   (progn				;save it for splitting this up
     (when (null *session*)
@@ -176,6 +186,7 @@ customize behavior."))
         (timing "rendering (w/ hooks)"
           (eval-hook :pre-render)
           (with-dynamic-hooks (:dynamic-render)
+            (set-widgets-public-parameters)
             (if (ajax-request-p)
               (handle-ajax-request app)
               (handle-normal-request app)))
