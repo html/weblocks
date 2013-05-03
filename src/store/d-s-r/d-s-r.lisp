@@ -149,12 +149,8 @@ instances of 'class-name' and order them with 'order-by'."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Querying persistent objects ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-#+l(defmethod find-persistent-object-by-id ((store database) class-name object-id)
-  (car (select class-name
-	       :where [= (sql-expression :attribute (class-id-slot-name class-name))
-	                 object-id]
-	       :flatp t :caching nil :database store))
-  )
+(defmethod find-persistent-object-by-id ((store rdf:repository-mediator) class-name object-id)
+  (get-object-by-uuid-from-wilbur-mediator class-name (wilbur:node (uuid::format-as-urn nil (uuid:make-uuid-from-string object-id)))))
 
 
 (defun get-object-by-uuid-from-wilbur-mediator (class uuid)
