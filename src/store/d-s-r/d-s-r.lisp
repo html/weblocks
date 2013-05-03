@@ -30,16 +30,17 @@
 ;;;;;;;;;;;;;;;;;;;;
 ;;; Transactions ;;;
 ;;;;;;;;;;;;;;;;;;;;
-#+l(defmethod begin-transaction ((store database))
-  (start-transaction :database store))
+(defun transactions-warning ()
+  (warn "Tranactions not implemented yet"))
 
-#+l(defmethod commit-transaction ((store database))
-  (when (in-transaction-p :database store)
-    (commit :database store)))
+(defmethod begin-transaction ((store rdf:repository-mediator))
+  (transactions-warning))
 
-#+l(defmethod rollback-transaction ((store database))
-  (when (in-transaction-p :database store)
-    (rollback :database store)))
+(defmethod commit-transaction ((store rdf:repository-mediator))
+  (transactions-warning))
+
+(defmethod rollback-transaction ((store rdf:repository-mediator))
+  (transactions-warning))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Creating and deleting persistent objects ;;;
@@ -217,7 +218,7 @@ instances of 'class-name' and order them with 'order-by'."
     (length (get-all-rdf-items-from-wilbur-mediator class-name))))
 
 (defmethod object-id ((obj rdf:resource-object))
-  (rdf:uri obj))
+  (write-to-string (rdf:uri obj)))
 
 (defmethod class-visible-slots-impl :around (obj &key readablep writablep)
   (if (and 
