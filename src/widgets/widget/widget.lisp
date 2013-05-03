@@ -541,6 +541,18 @@ if INCLUDE-SUBTYPES-P) in the widget tree starting at ROOT
           (push widget widgets))))
     widgets))
 
+(defun get-widgets-with-uri-ids ()
+  "Find widgets which have uri-id"
+  (let (widgets)
+    (walk-widget-tree 
+      (root-widget)
+      (lambda (widget d)
+        (declare (ignore d))
+        (when (and (subtypep (type-of widget) 'widget)
+                   (not (null (widget-uri-id widget))))
+          (push widget widgets))))
+    widgets))
+
 (defun widget-parents (widget)
   "Return the parent chain of a widget."
   (let ((parent (widget-parent widget)))

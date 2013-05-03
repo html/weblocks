@@ -105,14 +105,21 @@ customize behavior."))
         (webapp-update-thread-status "Request complete/idle")))))
 
 (defun set-widgets-public-parameters ()
-  (loop for (key . value) in (request-parameters) do 
-        (ppcre:register-groups-bind 
-          (uri-id slot)
-          ("^([^\\.]+)\\.([^\\.]+)$" key)
-          (let ((widgets (get-widgets-by-uri-id (intern (string-upcase uri-id) "KEYWORD"))))
-            ;(firephp:fb uri-id (intern (string-upcase slot) "KEYWORD") value widgets)
-            (loop for widget in widgets do 
-                  (setf-public-parameter widget (intern (string-upcase slot) "KEYWORD") value))))))
+  (let ((request-params (request-parameters))
+        (additional-parameters))
+    (loop for widget in (get-widgets-with-uri-ids) do 
+          (loop for param in (widget-uri-public-parameters widget) do
+                (let ((param-key (string-downcase (format nil "~A.~A" (widget-uri-id widget) param))))
+                  (unless (assoc param-key request-params :test #'string=)
+                    (push (cons param-key nil) additional-parameters)))))
+    (loop for (key . value) in (append request-params additional-parameters) do 
+          (ppcre:register-groups-bind 
+            (uri-id slot)
+            ("^([^\\.]+)\\.([^\\.]+)$" key)
+            (let ((widgets (get-widgets-by-uri-id (intern (string-upcase uri-id) "KEYWORD"))))
+              ;(firephp:fb uri-id (intern (string-upcase slot) "KEYWORD") value widgets)
+              (loop for widget in widgets do 
+                    (setf-public-parameter widget (intern (string-upcase slot) "KEYWORD") value)))))))
 
 (defmethod handle-client-request ((app weblocks-webapp))
   (progn				;save it for splitting this up
