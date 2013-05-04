@@ -134,7 +134,10 @@ without escaping."
 	 (url ""))
 
     (loop for (key value) on args :by 'cddr
-          do (setf url (add-get-param-to-url url (string-downcase (format nil "~A.~A" widget-or-uri-id key)) (write-to-string value))))
+          do (setf url (add-get-param-to-url url (string-downcase (format nil "~A.~A" widget-or-uri-id key)) 
+                                             (if (stringp value) 
+                                               value 
+                                               (write-to-string value)))))
 
     (with-html
       (:a :href url :onclick (when ajaxp
