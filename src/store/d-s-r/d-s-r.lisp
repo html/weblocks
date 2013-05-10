@@ -6,7 +6,8 @@
 
 (in-package :weblocks-d-s-r)
 
-(export '(order-by-expression range-to-offset range-to-limit))
+(defvar *items* nil)
+(defvar *max-items-length* 0)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Initialization/finalization ;;;
@@ -16,16 +17,12 @@
     (rdf:load-repository-as (rdf:mediator-repository (rdf:wilbur-mediator)) in mime:application/n3))
   (setf *default-store* (rdf:wilbur-mediator)))
 
-#+l(defmethod close-store ((store database))
+(defmethod close-store ((store rdf:repository-mediator))
   (when (eq *default-store* store)
     (setf *default-store* nil))
-  (disconnect :database store))
+  (rdf:repository-close store))
 
-#+l(defmethod clean-store ((store database))
-  (dolist (seq (list-sequences :database store))
-    (drop-sequence seq :database store))
-  (dolist (table (list-tables :database store))
-    (delete-records :from table :database store)))
+#+l(defmethod clean-store ((store database)))
 
 ;;;;;;;;;;;;;;;;;;;;
 ;;; Transactions ;;;
@@ -45,106 +42,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Creating and deleting persistent objects ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-#+l(defmethod persist-object ((store database) object &key)
-  ;; Note, we persist new objects in three steps, this should be
-  ;; optimized into a single query later
-  (let* ((class-name (class-name (class-of object)))
-	 (current-id (object-id object))
-	 (sequence-name (intern (concatenate 'string
-					     (symbol-name class-name)
-					     (symbol-name '#:-seq))
-				(symbol-package class-name))))
-    (unless current-id
-      ;; Create sequence if necessary
-      (unless (sequence-exists-p sequence-name :database store :owner :all)
-	(create-sequence sequence-name :database store))
-      ;; Set the id to next sequence number
-      (setf (object-id object)
-	    (sequence-next sequence-name :database store)))
-    ;; Persist object
-    (let (success)
-      (unwind-protect
-	   (progn
-	     (update-records-from-instance object :database store)
-	     (setf success t)
-             object)
-	(when (and (not success)
-		   (null current-id))
-	  (setf (object-id object) nil))))))
+#+l(defmethod persist-object ((store database) object &key))
 
-#+l(defmethod delete-persistent-object ((store database) object)
-  (delete-instance-records object))
+#+l(defmethod delete-persistent-object ((store database) object))
 
-#+l(defmethod delete-persistent-object-by-id ((store database) class-name object-id)
-  (delete-records :from class-name
-		  :where [= (sql-expression :attribute (class-id-slot-name class-name))
-		            object-id]
-		  :database store)
-  )
-
-;;;;;;;;;;;;;
-;;; Utils ;;;
-;;;;;;;;;;;;;
-#+l(defun slot-db-info (class slot-name)
-  "Returns clsql db-info structure."
-  )
-
-#+l(defun class-order-by-join-classes (class-name order-by)
-  "Returns a list of class names that need to be selected to find
-instances of 'class-name' and order them with 'order-by'."
-  (flet ((slot-join-class (class slot-name)
-	   (gethash :join-class (slot-db-info class slot-name))))
-    (loop
-       for slot in (cons nil (drop-last (ensure-list (car order-by))))
-       for class = class-name then (slot-join-class class slot)
-       collect class)))
-
-#+l(defun class-order-by-join-where (class-name order-by)
-  "Returns a 'where' expression that joins classes determined by
-'class-order-by-join-classes' in order to find instances of
-'class-name' and order them with 'order-by'."
-  (when (and (car order-by)
-	     (listp (car order-by))
-	     (second (car order-by)))
-    (flet ((slot-home-key (class slot-name)
-	     (gethash :home-key (slot-db-info class slot-name)))
-	   (slot-foreign-key (class slot-name)
-	     (gethash :foreign-key (slot-db-info class slot-name))))
-      (apply #'sql-operation 'and
-	     (remove nil
-		     (maplist (lambda (classes slots)
-				(let ((c1 (first classes))
-				      (c2 (second classes))
-				      (slot (car slots)))
-				  (when (and c1 c2)
-				    (sql-operation '=
-						   (sql-operation 'slot-value c1
-								  (slot-home-key c1 slot))
-						   (sql-operation 'slot-value c2
-								  (slot-foreign-key c1 slot))))))
-			      (class-order-by-join-classes class-name order-by)
-			      (drop-last (car order-by))))))))
-
-#+l(defun order-by-expression (class-name order-by)
-  "Converts the 'order-by' argument to a SQL expression."
-  (let ((order-path (car order-by)))
-    (when order-by
-      (list (list (if (listp order-path)
-		      (sql-operation 'slot-value
-				     (last-element (class-order-by-join-classes class-name order-by))
-				     (last-element order-path))
-		      (sql-expression :attribute order-path))
-		  (cdr order-by))))))
-
-#+l(defun range-to-offset (range)
-  "Converts the 'range' argument to SQL OFFSET."
-  (when range
-    (car range)))
-
-#+l(defun range-to-limit (range)
-  "Converts the 'range' argument to SQL LIMIT."
-  (when range
-    (- (cdr range) (car range))))
+#+l(defmethod delete-persistent-object-by-id ((store database) class-name object-id))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Querying persistent objects ;;;
@@ -176,8 +78,15 @@ instances of 'class-name' and order them with 'order-by'."
     :test #'rdf:equal))
 
 (defun get-all-rdf-items-from-wilbur-mediator (class-name)
-  (loop for i in (get-all-urns-from-wilbur-mediator)
-        collect (get-object-by-uuid-from-wilbur-mediator class-name i)))
+  (when (or 
+          (not *items*)
+          (< (length *items*) *max-items-length* )) 
+    (setf *items* 
+          (loop for i in (get-all-urns-from-wilbur-mediator)
+                collect (get-object-by-uuid-from-wilbur-mediator class-name i)))
+    (setf *max-items-length* (length *items*)))
+
+  *items*)
 
 (defmethod find-persistent-objects ((store rdf:repository-mediator) 
                                     class-name &key order-by range where &allow-other-keys)
