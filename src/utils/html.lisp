@@ -116,7 +116,16 @@ without escaping."
                     (string-downcase i)
                     i)))))
 
-(defun render-param-link (widget-or-uri-id label &rest args)
+(defun get-param-url (widget-or-uri-id args)
+  (let ((url ""))
+    (loop for (key value) on args :by 'cddr
+          do (setf url (add-get-param-to-url url (string-downcase (format nil "~A.~A" widget-or-uri-id key)) 
+                                             (if (stringp value) 
+                                               value 
+                                               (write-to-string value)))))
+    url))
+
+(defun with-href-onclick-values (widget-or-uri-id func &rest args)
   "Renders link to change widget public parameter(s)"
   (declare (optimize (speed 3) (space 2)))
   (setf ajaxp nil)
@@ -130,22 +139,27 @@ without escaping."
                               (widget-url-id widget-or-uri-id)
                               (error "Widget ~A does not have url-id parameter" widget-or-uri-id)))))
 
-  (let* ((*print-pretty* nil)
-	 (url ""))
+  (let* ((*print-pretty* nil))
 
-    (loop for (key value) on args :by 'cddr
-          do (setf url (add-get-param-to-url url (string-downcase (format nil "~A.~A" widget-or-uri-id key)) 
-                                             (if (stringp value) 
-                                               value 
-                                               (write-to-string value)))))
+    (funcall func 
+             (get-param-url widget-or-uri-id args)
+             (when ajaxp
+               (get-initiate-action-js-code action-code args)))))
 
-    (with-html
-      (:a :href url :onclick (when ajaxp
-                               (get-initiate-action-js-code action-code args))
-       (funcall (lambda (label)
-                  (htm (str (princ-to-string label))))
-                label)))
-    (log-link label action-code)))
+(defun render-param-link (widget-or-uri-id label &rest args)
+  "Renders link to change widget public parameter(s)"
+  (apply 
+    #'with-href-onclick-values 
+    (list* 
+      widget-or-uri-id 
+      (lambda (href onclick)
+        (with-html
+          (:a 
+            :href  href
+            :onclick onclick
+            (htm (str (princ-to-string label))))))
+      args))
+  (log-link label action-code))
 
 (defun render-button (name  &key (value (humanize-name name)) id (class "submit"))
   "Renders a button in a form.
