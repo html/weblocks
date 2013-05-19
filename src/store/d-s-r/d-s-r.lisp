@@ -42,7 +42,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Creating and deleting persistent objects ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-#+l(defmethod persist-object ((store database) object &key))
+(defmethod persist-object ((store rdf:repository-mediator) object &key)
+  (rdf:commit object)
+  (setf (slot-value object 'de.setf.resource.implementation::state) rdf:new-persistent)
+  (setf (slot-value object 'de.setf.resource.implementation::history) rdf:new-persistent)
+  (rdf:project-graph store object)
+  (setf *items* nil)
+  object)
 
 #+l(defmethod delete-persistent-object ((store database) object))
 
@@ -68,6 +74,7 @@
             (uuid:make-uuid-from-string (ppcre:regex-replace-all "^urn:uuid:" (wilbur:node-uri (rdf:subject (first graph))) ""))))
 
     (rdf:project-graph graph obj)
+    (rdf:make-persistent obj)
     obj))
 
 (defun get-all-urns-from-wilbur-mediator ()
