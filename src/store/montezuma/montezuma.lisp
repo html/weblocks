@@ -23,11 +23,20 @@
 ;;;;;;;;;;;;;;;;;;;;
 ;;; Transactions ;;;
 ;;;;;;;;;;;;;;;;;;;;
-#+l(defmethod begin-transaction ((store database)))
+(defmethod begin-transaction ((store montezuma:index))
+  (declare (ignore store))
+  ; TODO
+  )
 
-#+l(defmethod commit-transaction ((store database)))
+(defmethod commit-transaction ((store montezuma:index))
+  (declare (ignore store))
+  ; TODO
+  )
 
-#+l(defmethod rollback-transaction ((store database)))
+(defmethod rollback-transaction ((store montezuma:index))
+  (declare (ignore store))
+  ; TODO
+  )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Creating and deleting persistent objects ;;;
