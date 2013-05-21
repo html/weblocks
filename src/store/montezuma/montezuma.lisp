@@ -70,10 +70,12 @@
     (let ((result))
       (montezuma:each 
         (montezuma:search 
-          *default-store* "*" 
+          *default-store* (make-instance 'montezuma::match-all-query)
           :first-doc (car range)
-          :num-docs (- (cdr range) (car range))
-          :sort (when order-by
+          :num-docs (when range 
+                      (- (cdr range) (car range)))
+          :sort 
+          (when order-by
                   (make-instance 'montezuma::sort 
                                  :fields (list 
                                            (make-instance 'montezuma::sort-field
