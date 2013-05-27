@@ -96,8 +96,12 @@
   *items*)
 
 (defmethod find-persistent-objects ((store rdf:repository-mediator) 
-                                    class-name &key order-by range where &allow-other-keys)
+                                    class-name &key order-by range filter &allow-other-keys)
   (let ((items (get-all-rdf-items-from-wilbur-mediator class-name)))
+
+    (when filter 
+      (setf items (remove-if-not filter items)))
+
     (if order-by 
       (setf items (sort items 
                         (lambda (item1 item2)
@@ -116,9 +120,7 @@
     (if range 
       (setf items (subseq items (car range) (cdr range))))
 
-    (if (or where)
-      (error "Unimplemented case ~A ~A ~A~%" order-by range where)
-      items)))
+    items))
 
 (defmethod count-persistent-objects 
   ((store rdf:repository-mediator) 
