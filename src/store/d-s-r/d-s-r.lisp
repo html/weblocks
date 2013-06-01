@@ -15,7 +15,8 @@
 (defmethod open-store ((store-type (eql :d-s-r)) &key (mediator-type (eql :wilbur-n3-file)) pathname)
   (with-open-file (in pathname :direction :input)
     (rdf:load-repository-as (rdf:mediator-repository (rdf:wilbur-mediator)) in mime:application/n3))
-  (setf *default-store* (rdf:wilbur-mediator)))
+  (setf *default-store* (rdf:wilbur-mediator))
+  (setf (slot-value *default-store* 'de.setf.resource.implementation::default-context) nil))
 
 (defmethod close-store ((store rdf:repository-mediator))
   (when (eq *default-store* store)
@@ -50,7 +51,9 @@
   (setf *items* nil)
   object)
 
-#+l(defmethod delete-persistent-object ((store database) object))
+(defmethod delete-persistent-object ((store rdf:repository-mediator) object)
+  (setf (slot-value object 'de.setf.resource.implementation::state) rdf:modified-persistent)
+  (rdf:delete object))
 
 #+l(defmethod delete-persistent-object-by-id ((store database) class-name object-id))
 
