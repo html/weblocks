@@ -176,6 +176,7 @@ customize behavior."))
         (timing "rendering (w/ hooks)"
           (eval-hook :pre-render)
           (with-dynamic-hooks (:dynamic-render)
+            (set-widgets-public-parameters)
             (if (ajax-request-p)
               (handle-ajax-request app)
               (handle-normal-request app)))
