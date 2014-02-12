@@ -37,7 +37,8 @@
     :parse-number 
     :pretty-function 
     :babel 
-    :split-sequence)
+    :split-sequence
+    :routes)
    :components ((:module src
                :components (
                    (:file "package")
@@ -81,11 +82,13 @@
                       :depends-on ("weblocks" "debug-mode"))
                      (:file "error-handler"
                       :depends-on ("weblocks" "application"))
+                     (:file "routing"
+                      :depends-on (utils "weblocks"))
                      (:file "request-handler"
                       :depends-on (utils "weblocks" "page-template" "debug-mode"
                           "actions" "request-hooks" "application"
                           "request" "dependencies" "uri-tokens"
-                          "error-handler"))
+                          "error-handler" "routing"))
                      (:module linguistic
                       :components ((:file "grammar"))
                       :depends-on ("weblocks" utils))

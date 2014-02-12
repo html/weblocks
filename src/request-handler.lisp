@@ -104,6 +104,32 @@ customize behavior."))
           result)
         (webapp-update-thread-status "Request complete/idle")))))
 
+(defun set-widgets-public-parameters ()
+  (let ((request-params (or 
+                          (get-route-parameters)
+                          (request-parameters)))
+        (additional-parameters))
+    (loop for widget in (get-widgets-with-uri-ids) do 
+          (loop for param in (widget-uri-public-parameters widget) do
+                (let ((param-key (string-downcase (format nil "~A.~A" (widget-uri-id widget) param))))
+                  (unless (assoc param-key request-params :test #'string=)
+                    (push (cons param-key nil) additional-parameters)))))
+    (loop for (key . value) in (append request-params additional-parameters) do 
+          (ppcre:register-groups-bind 
+            (uri-id slot)
+            ("^([^\\.]+)\\.([^\\.]+)$" key)
+            (let ((widgets (get-widgets-by-uri-id (intern (string-upcase uri-id) "KEYWORD"))))
+              ;(firephp:fb uri-id (intern (string-upcase slot) "KEYWORD") value widgets)
+              (loop for widget in widgets do 
+                    (setf-public-parameter widget (intern (string-upcase slot) "KEYWORD") value)))))))
+
+(defun get-route-parameters ()
+  (ignore-errors 
+    (loop for (key . value) in (nth-value 1 (routes:match *routes-mapper* (hunchentoot:request-uri*)))
+          collect (cons 
+                    (string-downcase key)
+                    value))))
+
 (defmethod handle-client-request ((app weblocks-webapp))
   (progn                                ;save it for splitting this up
     (when (null *session*)
@@ -293,8 +319,10 @@ customize behavior."))
   (timing "page render"
     (render-page app))
   ;; make sure all tokens were consumed (FIXME: still necessary?)
-  (unless (or (tokens-fully-consumed-p *uri-tokens*)
-              (null (all-tokens *uri-tokens*)))
+  (unless (or 
+            (get-route-parameters)
+            (tokens-fully-consumed-p *uri-tokens*)
+            (null (all-tokens *uri-tokens*)))
     (page-not-found-handler app)))
 
 (defun remove-session-from-uri (uri)
