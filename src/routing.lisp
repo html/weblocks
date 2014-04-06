@@ -41,12 +41,17 @@
         collect route))
 
 (defun url-for (&rest args)
-  (let* ((args-alist (alexandria:plist-alist args))
-         (route (first (get-routes-with-variables args-alist))))
-    (unless route 
-      (error "No route found for ~A" args))
-    (format nil 
-            "/~A"
-            (routes::generate-url 
-              route
-              args-alist))))
+  (flet ((transform-cdrs-to-string (alist)
+           (loop for (key . val) in alist 
+                 collect (cons key (if (stringp val) 
+                                     val 
+                                     (write-to-string val))))))
+    (let* ((args-alist (transform-cdrs-to-string (alexandria:plist-alist args)))
+           (route (first (get-routes-with-variables args-alist))))
+      (unless route 
+        (error "No route found for ~A" args))
+      (format nil 
+        "/~A"
+        (routes::generate-url 
+          route
+          args-alist)))))

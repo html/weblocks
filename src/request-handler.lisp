@@ -119,7 +119,6 @@ customize behavior."))
             (uri-id slot)
             ("^([^\\.]+)\\.([^\\.]+)$" key)
             (let ((widgets (get-widgets-by-uri-id (intern (string-upcase uri-id) "KEYWORD"))))
-              ;(firephp:fb uri-id (intern (string-upcase slot) "KEYWORD") value widgets)
               (loop for widget in widgets do 
                     (setf-public-parameter widget (intern (string-upcase slot) "KEYWORD") value)))))))
 
