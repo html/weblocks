@@ -25,7 +25,8 @@ if there is an action involved (even if the user hits refresh)."
   "Detects if the current request was initiated via AJAX by looking
 for 'X-Requested-With' http header. This function expects to be called
 in a dynamic hunchentoot environment."
-  (header-in* "X-Requested-With"))
+  (and (header-in* "X-Requested-With")
+       (equal "XMLHttpRequest" (header-in* "X-Requested-With"))))
 
 (defun pure-request-p ()
   "Detects if the current request is declared as 'pure', i.e. affects
@@ -38,6 +39,31 @@ all other parameters. However, none of the callbacks (see
 *on-pre-request*) are executed, no widgets are sent to the client,
 etc."
   (string-equal (get-parameter "pure") "true"))
+
+(defvar *redirect-request-p* nil)
+
+(defun redirect-request-p ()
+  (declare (special *redirect-request-p*))
+  (or *redirect-request-p* 
+      (webapp-session-value 'redirect-p)))
+
+(defun clear-session-redirect-p ()
+  (declare (special *redirect-request-p*))
+  (setf *redirect-request-p* (webapp-session-value 'redirect-p))
+  (setf (webapp-session-value 'redirect-p) nil))
+
+(defun clear-redirect-var ()
+  (declare (special *redirect-request-p*))
+  (setf *redirect-request-p* nil))
+
+(eval-when (:load-toplevel)
+  (pushnew 'clear-session-redirect-p 
+           (request-hook :application :post-action))
+  (pushnew 'clear-redirect-var 
+           (request-hook :application :pre-action)))
+
+(defun set-redirect-true ()
+  (setf (webapp-session-value 'redirect-p) t))
 
 (defun redirect (uri &key (defer (and (boundp '*session*) (boundp '*request-hook*)
                                       :post-render))
@@ -69,6 +95,9 @@ NEW-WINDOW functionality will only work when Javascript is enabled."
                (abort-request-handler
                  (format nil "{\"redirect\":\"~A\"}" uri)))
              (hunchentoot:redirect uri))))
+
+    (set-redirect-true)
+
     (cond
       (new-window-p
         (send-script

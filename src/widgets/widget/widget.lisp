@@ -109,6 +109,17 @@ inherits from 'widget' if no direct superclasses are provided."
   (:metaclass widget-class)
   (:documentation "Base class for all widget objects."))
 
+(defmethod child-of-p ((parent widget) (child widget))
+  (or 
+    (find child (widget-children parent))
+    (some 
+      (lambda (item)
+        (child-of-p item child))
+      (widget-children parent))))
+
+(defmethod child-of-p ((parent function) child)
+  nil)
+
 (defmethod setf-public-parameter ((widget widget) parameter value)
   (eval `(setf (,(intern 
                    (format nil "~A-~A" (string-upcase (type-of widget)) (string-upcase parameter)) 
