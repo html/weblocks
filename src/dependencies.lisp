@@ -240,7 +240,7 @@ more convenient."
              (:script 'script-dependency))))
     (mapcar (lambda (dep)
               (if (consp dep)
-                  (destructuring-bind (type arg) dep
+                  (destructuring-bind (type arg &optional dummy-1 dummy-2) dep
                     (cond ((not (filedep-p type))
                            (make-instance 'javascript-code-dependency :code arg))
                           ((puri:uri-host (puri:parse-uri arg))

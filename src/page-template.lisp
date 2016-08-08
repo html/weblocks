@@ -97,9 +97,9 @@ page HTML (title, stylesheets, etc.).  Can be overridden by subclasses"))
   (with-html 
     (:meta :http-equiv "Content-type" :content *default-content-type*)
     (awhen (application-page-description app)
-      (htm (:meta :name "description" :value it)))
+      (htm (:meta :name "description" :content it)))
     (awhen (application-page-keywords app)
-      (htm (:meta :name "keywords" :value (format nil "~{~A~^,~}" it))))
+      (htm (:meta :name "keywords" :content (format nil "~{~A~^,~}" it))))
     (dolist (header *current-page-headers*)
       (etypecase header
         (string (htm (str header)))
