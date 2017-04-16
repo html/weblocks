@@ -6,13 +6,13 @@
 
 (defsystem weblocks-test
   :name "weblocks-test"
-  :version "0.1.4"
+  :version "0.2.0"
   :maintainer "Olexiy Zamkoviy, Scott L. Burson"
   :author "Slava Akhmechet"
   :licence "LLGPL"
   :description "A test harness for weblocks framework."
   :depends-on (:weblocks :weblocks-stores :lift :closer-mop :metatilities
-               :anaphora :f-underscore)
+               :anaphora :f-underscore :weblocks-prototype-js)
   :components ((:module test
                 :components (
                  (:file "weblocks-test")
@@ -62,7 +62,6 @@
                           :depends-on ("test-code"))
                  (:module snippets
                           :components ((:file "suggest")
-                                       (:file "isearch")
                                        (:file "html-utils-helper")
                                        (:file "html-utils"
                                               :depends-on ("html-utils-helper")))
@@ -113,11 +112,9 @@
                                                                                    (:file "url"))))))
                           :depends-on ("test-code" fixtures snippets))
                  (:module widgets
-                          :components ((:file "widget-test-utils")
-                                       (:module widget
+                          :components ((:module widget
                                                 :components ((:file "widget")
-                                                             (:file "widget-mop"))
-                                                :depends-on ("widget-test-utils"))
+                                                             (:file "widget-mop")))
                                        (:file "dataform")
                                        (:file "data-editor")
                                        (:file "quickform")
@@ -135,9 +132,9 @@
                                                              (:file "sort")
                                                              (:file "select")
                                                              (:file "drilldown"))
-                                                :depends-on ("widget-test-utils" "pagination-utils"))
+                                                :depends-on ("pagination-utils"))
                                        (:file "gridedit"
-                                              :depends-on ("widget-test-utils" "pagination-utils"))
+                                              :depends-on ("pagination-utils"))
                                        (:file "selector")
                                        (:file "navigation")
                                        (:file "pagination-utils")

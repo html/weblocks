@@ -56,20 +56,47 @@
               'attributize-name' (see
               presentation-choices-default-value-key).")))
 
+(defgeneric obtain-presentation-choices-aux (choices obj))
+
+(defmethod obtain-presentation-choices-aux ((choices function) obj)
+  (funcall choices obj))
+
+(defmethod obtain-presentation-choices-aux ((choices symbol) obj)
+  (funcall choices obj))
+
+(defmethod obtain-presentation-choices-aux ((choices cons) obj)
+  (declare (ignore obj))
+  choices)
+
 (defmethod obtain-presentation-choices ((choices-mixin choices-presentation-mixin) obj)
   "Accepts a 'choices-presentation-mixin' and an object being rendered
 and returns a list as specified in the 'choices' slot."
-  (labels ((obtain-presentation-choices-aux (choices obj)
-             (if (or (functionp choices)
-                     (and (symbolp choices)
-                          (fboundp choices)))
-                 (obtain-presentation-choices-aux (funcall choices obj) obj)
-                 (mapcar (lambda (choice)
-                           (if (consp choice)
-                               (cons (format nil "~A" (car choice))
-                                     (format nil "~A" (cdr choice)))
-                               (cons (funcall (presentation-choices-label-key choices-mixin) choice)
-                                     (funcall (presentation-choices-value-key choices-mixin) choice))))
-                         choices))))
+  (mapcar (lambda (choice)
+            (if (consp choice)
+                (cons (format nil "~A" (car choice))
+                      (format nil "~A" (cdr choice)))
+                (cons (princ-to-string
+                       (funcall
+                        (presentation-choices-label-key choices-mixin) choice))
+                      (princ-to-string
+                       (funcall
+                        (presentation-choices-value-key choices-mixin) choice)))))
     (obtain-presentation-choices-aux (presentation-choices choices-mixin) obj)))
 
+(defclass choices-parser (parser)
+  ()
+  (:documentation "A parser designed to handle choices."))
+
+(defmethod parse-view-field-value ((parser choices-parser) value obj
+                                   (view form-view) (field form-view-field) &rest args)
+  (declare (ignore args))
+  (let ((presentation
+         (view-field-presentation field)))
+  (values t
+          t
+          (find value
+                (obtain-presentation-choices-aux
+                 (presentation-choices presentation) obj)
+                :key (compose #'princ-to-string
+                              (presentation-choices-value-key presentation))
+                :test #'string=))))

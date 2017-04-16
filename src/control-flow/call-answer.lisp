@@ -56,7 +56,8 @@ and the result is returned. Otherwise the continuation isn't passed."
 callee widget or the continuation object explicitly. Continuation is
 called with RESULT (defaulting to NIL). If the widget doesn't have a
 continuation, recursively tries its parents."
-  (mark-dirty (root-widget))
+  (when (root-widget)
+    (mark-dirty (root-widget)))
   (if (widget-continuation continuation)
       (safe-funcall (widget-continuation continuation) result)
       (when (widget-parent continuation)
@@ -136,8 +137,9 @@ for styling purposes."
                (lambda (&rest args)
                  (declare (ignore args))
                  (let ((weblocks-stream *weblocks-output-stream*))
+                   ; Does not work when replacing code with render-wt
                    (write-string 
-                     (render-template-to-string 
+                     (render-wt-to-string 
                        :modal-wt 
                        (list :css-class css-class :callee callee)
                        :title title 

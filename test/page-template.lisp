@@ -3,6 +3,7 @@
 
 
 (defwebapp some-name
+    :js-backend :prototype
     :bundle-dependency-types nil
     :version-dependency-types nil
     :gzip-dependency-types nil)
@@ -32,16 +33,16 @@
     (:head
      (:title "some-name - Some Page")
      (:meta :http-equiv "Content-type" :content "text/html; charset=utf-8")
-     (:meta :name "description" :value "Some Page")
+     (:meta :name "description" :content "Some Page")
      (:link :rel "stylesheet" :type "text/css" :href "/some-name/pub/stylesheets/layout.css")
      (:link :rel "stylesheet" :type "text/css" :href "/some-name/pub/stylesheets/main.css")
      (:link :rel "stylesheet" :type "text/css" :href "/some-name/pub/stylesheets/dialog.css")
      (:link :rel "stylesheet" :type "text/css" :href "/some-name/pub/stylesheets/foo.css")
      (:link :rel "stylesheet" :type "text/css" :href "/some-name/pub/stylesheets/bar.css")
-     (:script :src "/some-name/pub/scripts/prototype.js" :type "text/javascript" "")
-     (:script :src "/some-name/pub/scripts/scriptaculous.js" :type "text/javascript" "")
-     (:script :src "/some-name/pub/scripts/weblocks.js" :type "text/javascript" "")
-     (:script :src "/some-name/pub/scripts/dialog.js" :type "text/javascript" ""))
+     (:script :src "/some-name/pub/scripts/prototype-backend/prototype.js" :type "text/javascript" "")
+     (:script :src "/some-name/pub/scripts/prototype-backend/scriptaculous.js" :type "text/javascript" "")
+     (:script :src "/some-name/pub/scripts/prototype-backend/weblocks.js" :type "text/javascript" "")
+     (:script :src "/some-name/pub/scripts/prototype-backend/dialog.js" :type "text/javascript" ""))
     (:body
      (:div :class "page-wrapper"
            (:div :class "page-extra-top-1" "<!-- empty -->")

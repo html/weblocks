@@ -2,13 +2,13 @@
 (defpackage #:weblocks-asd
   (:use :cl :asdf)
   (:nicknames :wop)
-  (:export #:test #:test-op #:doc #:doc-op #:make-app #:make-app-op))
+  (:export #:test #:test-op #:doc #:doc-op #:make-app))
 
 (in-package :weblocks-asd)
 
 (defsystem weblocks
    :name "weblocks"
-   :version "0.10.19"
+   :version "0.13.7"
    :maintainer "Olexiy Zamkoviy, Scott L. Burson"
    :author "Slava Akhmechet"
    :licence "LLGPL"
@@ -50,8 +50,6 @@
                         (:file "list")
                         (:file "uri")
                         (:file "html")
-                        (:file "isearch"
-                         :depends-on ("html"))
                         (:file "menu"
                          :depends-on ("html"))
                         (:file "suggest")
@@ -206,8 +204,6 @@
      :depends-on (widget "dataseq"))
     (:file "pagination"
      :depends-on (widget "flash"))
-#+(or)(:file "table-composite"
-        :depends-on (composite))
     (:file "selector"
      :depends-on (widget))
     (:file "on-demand-selector"
@@ -280,27 +276,6 @@
 (defmethod operation-done-p ((o doc-op) (c (eql (find-system :weblocks))))
   nil)
 
-;;;; make-app-op operation
-(defclass make-app-op (operation)
-  ()
-  (:documentation "Allows to specialize built-in ASDF methods to create
-   a new Weblocks app."))
-
-(defmethod perform ((o make-app-op) (c component))
-  "Creates a new Weblocks application"
-  nil)
-
-(defmethod perform ((o make-app-op) (c (eql (find-system :weblocks))))
-  "Creates a new Weblocks application when (wop:make-app 'name \"/path/to/target/\")
-   is called."
-  (let ((app-name (cadr (member :name (asdf::operation-original-initargs o))))
-        (app-target (cadr (member :target (asdf::operation-original-initargs o)))))
-    (funcall (intern (symbol-name :make-application) (find-package :weblocks-scripts))
-             app-name app-target)))
-
-(defmethod operation-done-p ((o make-app-op) (c (eql (find-system :weblocks))))
-  nil)
-
 ;;;; helper functions that hide away the unnecessary arguments to
 ;;;; (asdf:operate)
 (defun test ()
@@ -312,7 +287,9 @@
   (asdf:operate 'doc-op :weblocks))
 
 (defun make-app (name &optional target)
-  "Creates a new Weblocks app named <name> into directory <target> 
-   based on the new-app-template."
-  (asdf:operate 'make-app-op :weblocks :name name :target target))
+   "Creates a new Weblocks app named <name> into directory <target> 
+    based on the new-app-template."
+   (or (find-package :weblocks-scripts) (asdf:load-system :weblocks-scripts))
+   (uiop:symbol-call :weblocks-scripts :make-application name target))
+
 

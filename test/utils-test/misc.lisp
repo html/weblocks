@@ -34,7 +34,7 @@
 ;;; Introspection helper
 (defun class-visible-slot-names (obj &rest args)
   (mapcar #'slot-definition-name
-          (apply #'weblocks::class-visible-slots (class-of obj) args)))
+          (apply #'weblocks-stores:class-visible-slots (class-of obj) args)))
 
 ;;; Test slot-value-by-path
 (deftest slot-value-by-path-1
@@ -351,21 +351,6 @@
     (with-request :get '(("action" . "test1") ("session" . "test2") ("foo" . "bar"))
       (weblocks:remove-parameter-from-uri "/pub/baz" "action"))
   "/pub/baz?session=test2&foo=bar")
-
-;;; test make-isearch-regex
-(deftest make-isearch-regex-1
-    (let ((regex (weblocks::make-isearch-regex "hello")))
-      (values (ppcre:scan regex "hello")
-              (ppcre:scan regex "HeLlO")
-              (ppcre:scan regex "test")))
-  0 0 nil)
-
-(deftest make-isearch-regex-2
-    (let ((regex (weblocks::make-isearch-regex "Hello")))
-      (values (ppcre:scan regex "Hello")
-              (ppcre:scan regex "hello")
-              (ppcre:scan regex "test")))
-  0 nil nil)
 
 ;;; Test object-class-name
 (deftest object-class-name-1

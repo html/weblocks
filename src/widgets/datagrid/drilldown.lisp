@@ -21,13 +21,20 @@
                    :reader label
                    :present-as nil)))
 
+(defun table-drilldown-field-header-cell-wt (&key class content &allow-other-keys)
+  (with-html-to-string (:th :class class (str content))))
+
+(deftemplate :table-drilldown-field-header-cell-wt 'table-drilldown-field-header-cell-wt)
+
 ;;; Drilldown cells
 (defmethod render-view-field-header ((field datagrid-drilldown-field) (view table-view)
                                      (widget datagrid) presentation value obj &rest args)
   (declare (ignore args))
-  (with-html (:th :class (datagrid-drilldown-style
-                          (car (dataseq-on-drilldown widget)))
-                  "")))
+  (render-wt 
+    :table-drilldown-field-header-cell-wt
+    (list :field field :view view :widget widget :presentation presentation :object obj :value value)
+    :class (datagrid-drilldown-style
+             (car (dataseq-on-drilldown widget)))))
 
 (defmethod render-view-field ((field datagrid-drilldown-field) (view table-view)
                               (widget datagrid) presentation value obj &rest args
@@ -69,22 +76,22 @@
           (drilled-down-p (and (dataseq-drilled-down-item widget)
                                (eql (object-id (dataseq-drilled-down-item widget))
                                     (object-id obj)))))
-      (write-string 
-        (render-template-to-string 
-          :datagrid-table-view-body-row-wt
-          (list :view view :object obj :widget widget)
-          :prefix (capture-weblocks-output (safe-apply (sequence-view-row-prefix-fn view) view obj args))
-          :suffix (capture-weblocks-output (safe-apply (sequence-view-row-suffix-fn view) view obj args))
-          :row-action row-action
-          :session-string (session-name-string-pair)
-          :row-class (when (or alternp drilled-down-p)
-                       (concatenate 'string
-                                    (when alternp "altern")
-                                    (when (and alternp drilled-down-p) " ")
-                                    (when drilled-down-p "drilled-down")))
-          :alternp alternp 
-          :drilled-down-p drilled-down-p
-          :content (capture-weblocks-output (apply #'render-table-view-body-row view obj widget :row-action row-action args)))
-        *weblocks-output-stream*))
+      
+      (render-wt 
+        :datagrid-table-view-body-row-wt
+        (list :view view :object obj :widget widget)
+        :object obj
+        :prefix (capture-weblocks-output (safe-apply (sequence-view-row-prefix-fn view) view obj args))
+        :suffix (capture-weblocks-output (safe-apply (sequence-view-row-suffix-fn view) view obj args))
+        :row-action row-action
+        :session-string (session-name-string-pair)
+        :row-class (when (or alternp drilled-down-p)
+                     (concatenate 'string
+                                  (when alternp "altern")
+                                  (when (and alternp drilled-down-p) " ")
+                                  (when drilled-down-p "drilled-down")))
+        :alternp alternp 
+        :drilled-down-p drilled-down-p
+        :content (capture-weblocks-output (apply #'render-table-view-body-row view obj widget :row-action row-action args))))
     (call-next-method)))
 
